@@ -17,7 +17,6 @@ export const getHotelData = async (req:Request,res:Response) => {
           },
         },
       });
-      console.log("data",data);
       
       // return ResponseMessage(res,200,data);
     } catch (error) {
@@ -38,7 +37,6 @@ export const getHotelData = async (req:Request,res:Response) => {
         group: ['country_name'], // Group by country_name to get unique records
         // distinct: true, // Ensure unique values
       }) as any;
-  res.send(data)
       // return ResponseMessage(res, 200, data);
     } catch (error) {
       // return ResponseMessage(res, 500, undefined, "Error getting data");

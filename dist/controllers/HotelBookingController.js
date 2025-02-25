@@ -27,7 +27,6 @@ const getHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 },
             },
         });
-        console.log("data", data);
         // return ResponseMessage(res,200,data);
     }
     catch (error) {
@@ -48,7 +47,6 @@ const getCountryData = (req, res) => __awaiter(void 0, void 0, void 0, function*
             group: ['country_name'], // Group by country_name to get unique records
             // distinct: true, // Ensure unique values
         });
-        res.send(data);
         // return ResponseMessage(res, 200, data);
     }
     catch (error) {
