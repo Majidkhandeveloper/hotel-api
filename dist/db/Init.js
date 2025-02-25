@@ -13,13 +13,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const AddHotelModel_1 = __importDefault(require("../model/AddHotelModel"));
-const AddHotelRom_1 = __importDefault(require("../model/AddHotelRom"));
+const AddRoomData_1 = __importDefault(require("../model/AddRoomData"));
+// import AddHotelRom from '../model/AddHotelRom';
 // import SupplierCategoryModel from "../model/SupplierCategoryModel";
 const isDev = process.env.NODE_ENV === "development";
 const dbInit = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield AddHotelModel_1.default.sync({ force: false });
-        yield AddHotelRom_1.default.sync({ force: false });
+        yield AddRoomData_1.default.sync({ force: false });
         console.log('Database synchronization completed successfully.');
     }
     catch (error) {

@@ -10,17 +10,16 @@ class AddHotelData extends sequelize_1.Model {
 }
 AddHotelData.init({
     id: { type: sequelize_1.DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
-    // Required Fields
-    code: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    // Optional Fields
-    countryCode: { type: sequelize_1.DataTypes.STRING },
-    destinationCode: { type: sequelize_1.DataTypes.STRING },
-    city: { type: sequelize_1.DataTypes.STRING },
-    description: { type: sequelize_1.DataTypes.TEXT },
+    hotel_name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    hotel_star: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    hotel_address: { type: sequelize_1.DataTypes.STRING },
+    hotel_country: { type: sequelize_1.DataTypes.STRING },
+    hotel_contact: { type: sequelize_1.DataTypes.STRING },
+    hotel_umrah_status: { type: sequelize_1.DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    hotel_city: { type: sequelize_1.DataTypes.STRING },
 }, {
     timestamps: false,
     sequelize: dbConfig_1.default,
-    tableName: "hotelapi"
+    tableName: "addhoteldata"
 });
 exports.default = AddHotelData;

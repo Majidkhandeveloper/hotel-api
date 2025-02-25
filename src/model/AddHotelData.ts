@@ -5,12 +5,13 @@ import Connection from "../db/dbConfig";
 
 export interface AddHotelDataProps {
     id?: number;
-    code: string;
-    name: string;
-    countryCode: string;
-    destinationCode: string;
-    city: string;
-    description: string;
+    hotel_name: string;
+    hotel_star: string;
+    hotel_address: string;
+    hotel_country: string;
+    hotel_contact: string;
+    hotel_umrah_status: boolean;
+    hotel_city: string;
 }
 
 class AddHotelData extends Model<AddHotelDataProps> {}
@@ -18,21 +19,18 @@ class AddHotelData extends Model<AddHotelDataProps> {}
 AddHotelData.init(
     {
         id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
-
-        // Required Fields
-        code: { type: DataTypes.STRING, allowNull: false },
-        name: { type: DataTypes.STRING, allowNull: false },
-
-        // Optional Fields
-        countryCode: { type: DataTypes.STRING },
-        destinationCode: { type: DataTypes.STRING },
-        city: { type: DataTypes.STRING },
-        description: { type: DataTypes.TEXT },
+        hotel_name: { type: DataTypes.STRING, allowNull: false },
+        hotel_star: { type: DataTypes.STRING, allowNull: false },
+        hotel_address: { type: DataTypes.STRING },
+        hotel_country: { type: DataTypes.STRING },
+        hotel_contact: { type: DataTypes.STRING },
+        hotel_umrah_status: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+        hotel_city: { type: DataTypes.STRING },
     },
     {
         timestamps: false,
         sequelize: Connection,
-        tableName: "hotelapi"
+        tableName: "addhoteldata"
     }
 );
 
