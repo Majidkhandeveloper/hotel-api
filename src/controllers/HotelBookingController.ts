@@ -5,19 +5,6 @@ import HotelDataModel from "../model/HotelDataModel";
 import CityModel from "../model/CityModel";
 
 
-const segmentSchema = z.object({
-    main_id:z.number(),
-    htl_name:z.string(),
-    ckin_date:z.date().optional(),
-    ckout_date:z.date().optional(),
-    room_name:z.string(),
-    confirmation_no:z.number(),
-    remarks:z.string(),
-
-})
-
-
-
 // hotel data
 export const getHotelData = async (req:Request,res:Response) => {
     try {
@@ -51,7 +38,7 @@ export const getHotelData = async (req:Request,res:Response) => {
         group: ['country_name'], // Group by country_name to get unique records
         // distinct: true, // Ensure unique values
       }) as any;
-  
+  res.send(data)
       // return ResponseMessage(res, 200, data);
     } catch (error) {
       // return ResponseMessage(res, 500, undefined, "Error getting data");
