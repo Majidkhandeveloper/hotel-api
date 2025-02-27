@@ -8,29 +8,58 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.insertHotelData = void 0;
+const AddHotelDataModel_1 = __importDefault(require("../model/AddHotelDataModel"));
+const AddRoomDataModel_1 = __importDefault(require("../model/AddRoomDataModel"));
+const dbConfig_1 = __importDefault(require("../db/dbConfig"));
 // HOTEL API 
 const insertHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    const transaction = yield dbConfig_1.default.transaction(); // Start transaction
     try {
-        const { hotel_name, hotel_star, hotel_address } = req.body;
+        const _b = req.body, { hotelRooms, hotel_facilities, hotel_umrah_status } = _b, hotelDetails = __rest(_b, ["hotelRooms", "hotel_facilities", "hotel_umrah_status"]);
         const files = req.files;
-        //  Extract hotel images
-        const hotelImages = files
-            .filter((file) => file.fieldname === "hotel_images")
-            .map((file) => file.path);
-        //  Extract room images dynamically
-        const hotelRooms = [];
-        for (let i = 0; i < ((_a = req.body.hotelRooms) === null || _a === void 0 ? void 0 : _a.length) || 0; i++) {
-            const roomImages = files
-                .filter((file) => file.fieldname === `room_images_${i}`)
-                .map((file) => file.path);
-            hotelRooms.push({ roomIndex: i, roomImages });
+        // Extract hotel images
+        const hotelImages = ((_a = files === null || files === void 0 ? void 0 : files.filter((file) => file.fieldname === "hotel_images")) === null || _a === void 0 ? void 0 : _a.map((file) => file.path)) || [];
+        // Extract room images dynamically
+        const RoomsImages = [];
+        if (hotelRooms && Array.isArray(hotelRooms)) {
+            hotelRooms.forEach((_, i) => {
+                var _a;
+                const roomImages = ((_a = files === null || files === void 0 ? void 0 : files.filter((file) => file.fieldname === `room_images_${i}`)) === null || _a === void 0 ? void 0 : _a.map((file) => file.path)) || [];
+                RoomsImages.push({ roomIndex: i, roomImages });
+            });
         }
-        console.log("hotelImages", hotelImages, "roomImages", hotelRooms);
+        // Insert hotel data with transaction
+        const hotelData = yield AddHotelDataModel_1.default.create(hotelDetails, { transaction });
+        const hotelId = hotelData.dataValues.id; // Get the inserted hotel ID
+        const roomBody = hotelRooms.map((rm) => (Object.assign(Object.assign({}, rm), { hotel_id: hotelId, room_rate_start_date: new Date(rm.room_rate_start_date).toISOString().split("T")[0], room_rate_end_date: new Date(rm.room_rate_end_date).toISOString().split("T")[0] })));
+        // Insert room data
+        yield AddRoomDataModel_1.default.bulkCreate(roomBody, { transaction });
+        yield transaction.commit();
+        res.status(201).json({
+            message: "Hotel and rooms added successfully",
+        });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log("Error:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error });
     }
 });
 exports.insertHotelData = insertHotelData;

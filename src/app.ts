@@ -20,7 +20,9 @@ const PORT: number = parseInt(process.env.PORT || "4000");
 // middlewares
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 app.use("", express.static("uploads"));
 app.use("/site", express.static(__dirname + "uploads/site"));
 app.use(
@@ -36,7 +38,7 @@ app.use(
 // tables generating
 // make it comment when once table is created
 
-// dbInit;
+dbInit;
 
 
 

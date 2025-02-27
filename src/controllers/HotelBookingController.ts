@@ -1,37 +1,65 @@
 import { Request, Response } from "express";
 import { date, z } from "zod";
 import Sequelize, { FindOptions, Model, Op, where } from "sequelize";
-import HotelDataModel from "../model/HotelDataModel";
-import CityModel from "../model/CityModel";
+import AddHotelDataModel from "../model/AddHotelDataModel";
+import AddRoomDataModel from "../model/AddRoomDataModel";
+import Connection from "../db/dbConfig";
+
 
 // HOTEL API 
+
+
 export const insertHotelData = async (req: Request, res: Response) => {
+  const transaction = await Connection.transaction(); // Start transaction
 
   try {
-    const { hotel_name, hotel_star, hotel_address } = req.body;
-
+    const { hotelRooms, hotel_facilities, hotel_umrah_status, ...hotelDetails } = req.body;
     const files = req.files as Express.Multer.File[];
 
-    //  Extract hotel images
+    // Extract hotel images
     const hotelImages = files
-      .filter((file) => file.fieldname === "hotel_images")
-      .map((file) => file.path);
+      ?.filter((file) => file.fieldname === "hotel_images")
+      ?.map((file) => file.path) || [];
 
-    //  Extract room images dynamically
-    const hotelRooms: { roomIndex: number; roomImages: string[] }[] = [];
-    for (let i = 0; i < req.body.hotelRooms?.length || 0; i++) {
-      const roomImages = files
-        .filter((file) => file.fieldname === `room_images_${i}`)
-        .map((file) => file.path);
-      hotelRooms.push({ roomIndex: i, roomImages });
+    // Extract room images dynamically
+    const RoomsImages: { roomIndex: number; roomImages: string[] }[] = [];
+    if (hotelRooms && Array.isArray(hotelRooms)) {
+      hotelRooms.forEach((_: any, i: number) => {
+        const roomImages = files
+          ?.filter((file) => file.fieldname === `room_images_${i}`)
+          ?.map((file) => file.path) || [];
+        RoomsImages.push({ roomIndex: i, roomImages });
+      });
     }
 
+    // Insert hotel data with transaction
+    const hotelData = await AddHotelDataModel.create(hotelDetails, { transaction });
 
-    console.log("hotelImages", hotelImages, "roomImages", hotelRooms);
+    const hotelId = hotelData.dataValues.id; // Get the inserted hotel ID
+
+    const roomBody = hotelRooms.map((rm: any) => ({
+      ...rm,
+      hotel_id: hotelId,
+      room_rate_start_date: new Date(rm.room_rate_start_date).toISOString().split("T")[0], // Convert to YYYY-MM-DD
+      room_rate_end_date: new Date(rm.room_rate_end_date).toISOString().split("T")[0], // Convert to YYYY-MM-DD
+    }));
+
+    // Insert room data
+    await AddRoomDataModel.bulkCreate(roomBody, { transaction });
+
+    await transaction.commit(); 
+
+    res.status(201).json({
+      message: "Hotel and rooms added successfully",
+    });
+
   } catch (error) {
-
+    await transaction.rollback(); 
+    console.log("Error:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error });
   }
-}
+};
+
 
 
 
