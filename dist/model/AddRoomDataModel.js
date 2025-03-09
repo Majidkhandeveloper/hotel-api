@@ -26,6 +26,8 @@ AddRoomDataModel.init({
     sequelize: dbConfig_1.default,
     tableName: "addroomdata"
 });
-AddHotelDataModel_1.default.hasMany(AddRoomDataModel, { foreignKey: "hotel_id" });
-AddRoomDataModel.belongsTo(AddHotelDataModel_1.default, { foreignKey: "hotel_id" });
+AddHotelDataModel_1.default.hasMany(AddRoomDataModel, {
+    foreignKey: "hotel_id", as: "hotel_rooms",
+});
+AddRoomDataModel.belongsTo(AddHotelDataModel_1.default, { foreignKey: "hotel_id", as: "hotel" });
 exports.default = AddRoomDataModel;

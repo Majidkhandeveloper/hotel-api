@@ -30,14 +30,14 @@ exports.UploadFiles = void 0;
 //   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
 // });
 const multer_1 = __importDefault(require("multer"));
+const path_1 = __importDefault(require("path"));
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "./uploads"); // ✅ Change to your actual upload directory
+        cb(null, "uploads");
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname);
+        const filename = `img-${Date.now()}${path_1.default.extname(file.originalname)}`;
+        cb(null, filename); // Save only the filename
     },
 });
-exports.UploadFiles = (0, multer_1.default)({
-    storage,
-}).any(); // ✅ Allow any file field dynamically
+exports.UploadFiles = (0, multer_1.default)({ storage }).any();

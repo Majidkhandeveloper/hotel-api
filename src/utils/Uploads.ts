@@ -28,16 +28,16 @@
 // });
 
 import multer from "multer";
+import path from "path";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "./uploads"); // ✅ Change to your actual upload directory
+    cb(null, "uploads"); 
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+    const filename = `img-${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, filename); // Save only the filename
   },
 });
 
-export const UploadFiles = multer({
-  storage,
-}).any(); // ✅ Allow any file field dynamically
+export const UploadFiles = multer({ storage }).any();

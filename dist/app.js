@@ -8,8 +8,6 @@ const cors_1 = __importDefault(require("cors"));
 const dbConfig_1 = __importDefault(require("./db/dbConfig"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
-// models
-const Init_1 = __importDefault(require("./db/Init"));
 // routes
 const HotelBookingroutes_1 = __importDefault(require("./routes/HotelBookingroutes"));
 // import { ErrorMessage } from "./utils/ErrorMessage";
@@ -33,7 +31,7 @@ app.use((0, cors_1.default)({
 }));
 // tables generating
 // make it comment when once table is created
-Init_1.default;
+// dbInit;
 app.use("/api/v1/b2b", HotelBookingroutes_1.default);
 app.use((req, res) => {
     console.log(res, "no routes found with : " + req.url, 404);

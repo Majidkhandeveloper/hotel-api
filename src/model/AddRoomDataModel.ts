@@ -6,7 +6,7 @@ import AddHotelDataModel from "./AddHotelDataModel";
 
 export interface AddRoomDataModelProps {
     id?: number;
-    hotel_id:number;
+    hotel_id: number;
     room_nature: string;
     room_type: string;
     room_occupancy: string;
@@ -18,7 +18,7 @@ export interface AddRoomDataModelProps {
     room_status: boolean;
 }
 
-class AddRoomDataModel extends Model<AddRoomDataModelProps> {}
+class AddRoomDataModel extends Model<AddRoomDataModelProps> { }
 
 AddRoomDataModel.init(
     {
@@ -41,6 +41,8 @@ AddRoomDataModel.init(
     }
 );
 
-AddHotelDataModel.hasMany(AddRoomDataModel, { foreignKey: "hotel_id"});
-AddRoomDataModel.belongsTo(AddHotelDataModel, { foreignKey: "hotel_id" });
+AddHotelDataModel.hasMany(AddRoomDataModel, {
+    foreignKey: "hotel_id", as: "hotel_rooms",
+});
+AddRoomDataModel.belongsTo(AddHotelDataModel, { foreignKey: "hotel_id", as: "hotel" });
 export default AddRoomDataModel;

@@ -15,12 +15,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const AddHotelDataModel_1 = __importDefault(require("../model/AddHotelDataModel"));
 const AddRoomDataModel_1 = __importDefault(require("../model/AddRoomDataModel"));
+const HotelFacilitiesModel_1 = __importDefault(require("../model/HotelFacilitiesModel"));
+const HotelImagesModel_1 = __importDefault(require("../model/HotelImagesModel"));
+const RoomFacilitiesModel_1 = __importDefault(require("../model/RoomFacilitiesModel"));
+const RoomImagesModel_1 = __importDefault(require("../model/RoomImagesModel"));
 // import SupplierCategoryModel from "../model/SupplierCategoryModel";
 const isDev = process.env.NODE_ENV === "development";
 const dbInit = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield AddHotelDataModel_1.default.sync({ force: false });
         yield AddRoomDataModel_1.default.sync({ force: false });
+        yield HotelImagesModel_1.default.sync({ force: false });
+        yield RoomImagesModel_1.default.sync({ force: false });
+        yield HotelFacilitiesModel_1.default.sync({ force: false });
+        yield RoomFacilitiesModel_1.default.sync({ force: false });
         console.log('Database synchronization completed successfully.');
     }
     catch (error) {

@@ -8,6 +8,9 @@ const Uploads_1 = require("../utils/Uploads");
 const router = (0, express_1.Router)();
 // HOTEL API
 router.post("/insert-hotel-data", Uploads_1.UploadFiles, HotelBookingController_1.insertHotelData);
+router.get("/get_hotel_data", HotelBookingController_1.getHotelData);
+router.get('/get_single_hotel_data/:id', HotelBookingController_1.getSingleHotelData);
+router.patch('/update_hotel_data/:id', Uploads_1.UploadFiles, HotelBookingController_1.updateHotelData);
 // router.get('/hotel-data', getHotelData)
 // router.get('/country-data', getCountryData)
 // router.get('/city-data', getCityData)
