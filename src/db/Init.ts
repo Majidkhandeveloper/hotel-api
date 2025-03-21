@@ -16,12 +16,13 @@ const isDev = process.env.NODE_ENV === "development";
 const dbInit = async () => {
   try {
 
-    await AddHotelDataModel.sync({ force: false })
-    await AddRoomDataModel.sync({force:false})
-    await HotelImagesModel.sync({ force: false })
-    await RoomImagesModel.sync({force:false})
-    await HotelFacilitiesModel.sync({force:false})
-    await RoomFacilitiesModel.sync({force:false})
+    await AddHotelDataModel.sync({ alter: true });
+    await AddRoomDataModel.sync({ alter: true });
+    await HotelImagesModel.sync({ alter: true });
+    await RoomImagesModel.sync({ alter: true });
+    await HotelFacilitiesModel.sync({ alter: true });
+    await RoomFacilitiesModel.sync({ alter: true });
+
 
 
 

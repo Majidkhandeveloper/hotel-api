@@ -17,7 +17,7 @@ export const insertHotelData = async (req: Request, res: Response) => {
   const transaction = await Connection.transaction(); // Start transaction
 
   try {
-    const { hotelRooms, hotel_facilities, hotel_umrah_status, ...hotelDetails } = req.body;
+    const { hotelRooms, hotel_facilities, ...hotelDetails } = req.body;
     const files = req.files as Express.Multer.File[];
 
     // Extract hotel images
@@ -37,7 +37,12 @@ export const insertHotelData = async (req: Request, res: Response) => {
     }
 
     // Insert hotel data with transaction
-    const hotelData = await AddHotelDataModel.create(hotelDetails, { transaction });
+    const hotelData = await AddHotelDataModel.create({
+      ...hotelDetails,
+      cur_label: hotelRooms.at(0).cur_label,
+      currency: hotelRooms.at(0).currency,
+      roe: hotelRooms.at(0).roe,
+    }, { transaction });
     const hotelId = hotelData.dataValues.id as any; // Get the inserted hotel ID
     // Insert hoteliImages
     if (hotelImages.length > 0) {
@@ -130,11 +135,17 @@ export const insertHotelData = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const getHotelData = async (req: Request, res: Response) => {
   try {
-    const data = await AddHotelDataModel.findAll();
+    const data = await AddHotelDataModel.findAll({
+      include: [
+        {
+          model: HotelImagesModel,
+          as: "hotel_images",
+          attributes: ['hotel_images']
+        }],
+      order: [["id", "DESC"]],
+    });
 
     // Send response
     return res.status(200).json({
@@ -176,7 +187,7 @@ export const getSingleHotelData = async (req: Request, res: Response) => {
         {
           model: HotelImagesModel,
           as: "hotel_images",
-          attributes: ["hotel_images"]
+          attributes: ["id", "hotel_images"]
 
         },
         {
@@ -189,7 +200,9 @@ export const getSingleHotelData = async (req: Request, res: Response) => {
             },
             {
               model: RoomImagesModel,
-              as: "room_images"
+              as: "room_images",
+              // attributes: ["id","hotel_images"]
+
             }
           ]
         },
@@ -221,14 +234,150 @@ export const getSingleHotelData = async (req: Request, res: Response) => {
 };
 
 
+// export const getUmrahHotelData = async (req: Request, res: Response) => {
+//   try {
+
+//     // Ensure ID is a number (if your database requires it)
+
+//     // Fetch the hotel with its related models
+//     const data = await AddHotelDataModel.findAll({
+//       include: [
+//         {
+//           model: HotelFacilitiesModel,
+//           as: "hotel_facilities",
+//           attributes: ['facility']
+//         },
+//         {
+//           model: HotelImagesModel,
+//           as: "hotel_images",
+//           attributes: ["id", "hotel_images"]
+
+//         },
+//         {
+//           model: AddRoomDataModel,
+//           as: "hotel_rooms",
+//           include: [
+//             {
+//               model: RoomFacilitiesModel,
+//               as: "room_facilities"
+//             },
+//             {
+//               model: RoomImagesModel,
+//               as: "room_images",
+//               // attributes: ["id","hotel_images"]
+
+//             }
+//           ]
+//         },
+//       ],
+//       where: { hotel_umrah_status:1 },
+//     });
+
+//     if (!data) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Hotel not found",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Hotel retrieved successfully",
+//       data,
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching single hotel data:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error instanceof Error ? error.message : "Unknown error",
+//     });
+//   }
+// };
+
+export const getUmrahHotelData = async (req: Request, res: Response) => {
+  try {
+    const { check_in_date, check_out_date } = req.query; // Get from request query params
+
+    if (!check_in_date || !check_out_date) {
+      return res.status(400).json({
+        success: false,
+        message: "Check-in and Check-out dates are required.",
+      });
+    }
+    console.log("check_in_date",check_in_date,"check_out_date",check_out_date);
+
+    // Fetch the hotels where check-in and check-out dates are within the specified range
+    const data = await AddHotelDataModel.findAll({
+      include: [
+        {
+          model: HotelFacilitiesModel,
+          as: "hotel_facilities",
+          attributes: ["facility"],
+        },
+        {
+          model: HotelImagesModel,
+          as: "hotel_images",
+          attributes: ["id", "hotel_images"],
+        },
+        {
+          model: AddRoomDataModel,
+          as: "hotel_rooms",
+          include: [
+            {
+              model: RoomFacilitiesModel,
+              as: "room_facilities",
+            },
+            {
+              model: RoomImagesModel,
+              as: "room_images",
+            },
+          ],
+          where: {
+            room_rate_start_date: {
+              [Op.lte]: check_out_date, // Room check-in date should be before or on check-out date
+            },
+            room_rate_end_date: {
+              [Op.gte]: check_in_date, // Room check-out date should be after or on check-in date
+            },
+          },
+        },
+      ],
+      where: { hotel_umrah_status: 1 },
+    });
+
+    if (!data.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No hotels found for the given date range",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Hotels retrieved successfully",
+      data,
+    });
+
+  } catch (error) {
+    console.error("Error fetching Umrah hotel data:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+
 export const updateHotelData = async (req: Request, res: Response) => {
   const transaction = await Connection.transaction();
 
   try {
     const { id } = req.params;
-    const { hotelRooms, hotel_facilities, hotel_umrah_status, ...hotelDetails } = req.body;
+    const { hotelRooms, hotel_facilities, ...hotelDetails } = req.body;
     const files = req.files as Express.Multer.File[];
-    // console.log("hotelDetails",req.body,"id",id);
 
     const hotelId = parseInt(id);
 
@@ -237,11 +386,40 @@ export const updateHotelData = async (req: Request, res: Response) => {
     }
 
     // Check if hotel exists
-    const existingHotel = await AddHotelDataModel.findByPk(hotelId) as any;
+    const existingHotel = await AddHotelDataModel.findOne({
+      where: { id: hotelId },  // Correct placement of where condition
+      include: [
+        {
+          model: HotelFacilitiesModel,
+          as: "hotel_facilities",
+          attributes: ["facility"],
+        },
+        {
+          model: HotelImagesModel,
+          as: "hotel_images",
+          attributes: ["id", "hotel_images"],
+        },
+        {
+          model: AddRoomDataModel,
+          as: "hotel_rooms",
+          include: [
+            {
+              model: RoomFacilitiesModel,
+              as: "room_facilities",
+            },
+            {
+              model: RoomImagesModel,
+              as: "room_images",
+              attributes: ["id", "room_images"], // Uncommented attributes
+            },
+          ],
+        },
+      ],
+    }) as any;
+
     if (!existingHotel) {
       return res.status(404).json({ success: false, message: "Hotel not found" });
     }
-    console.log("existingHotel", existingHotel);
 
     // Update hotel details
     await AddHotelDataModel.update(hotelDetails, { where: { id: hotelId }, transaction });
@@ -250,10 +428,13 @@ export const updateHotelData = async (req: Request, res: Response) => {
     const hotelImages: string[] = files
       ?.filter((file) => file.fieldname === "hotel_images")
       ?.map((file) => file.filename) || [];
+
     const existingImages = await HotelImagesModel.findAll({
       where: { hotel_id: hotelId },
       attributes: ["hotel_images"],
     }) as any;
+    // console.log("hotelImages",hotelImages);
+
     const existingImagePaths = existingImages.map((img: { hotel_images: string }) => img.hotel_images);
 
     // Merge old and new images
@@ -298,34 +479,66 @@ export const updateHotelData = async (req: Request, res: Response) => {
         hotelRooms.map((rm: any) => ({
           ...rm,
           hotel_id: hotelId,
-          room_rate_start_date: new Date(),
-          room_rate_end_date: new Date(),
+          // room_rate_start_date: new Date(),
+          // room_rate_end_date: new Date(),
         })),
         { transaction, returning: true }
       );
 
-      // Extract room images dynamically
+      /////////////////////////////////////////////////////////////////////////////////////room images//////////////////////////////////
+      const existingRoomImages = await RoomImagesModel.findAll({
+        where: { room_id: existingHotel.hotel_rooms.map((room: any) => room.id) },
+        attributes: ["room_id", "room_images"],
+      }) as any;
+
+      const existingImagesMap: Record<number, string[]> = {};
+
+      // Assign images to their original index
+      existingHotel.hotel_rooms.forEach((room: any, index: number) => {
+        existingImagesMap[index] = existingRoomImages
+          .filter((img: any) => img.room_id === room.id)
+          .map((img: any) => img.room_images);
+      });
+
+
+      // Step 2: Extract new images uploaded for each room
       const RoomsImages: { roomIndex: number; roomImages: string[] }[] = [];
-      hotelRooms.forEach((_: any, i: number) => {
+
+      hotelRooms.forEach((_, i: number) => {
         const roomImages = files
           ?.filter((file) => file.fieldname === `room_images_${i}`)
           ?.map((file) => file.filename) || [];
         RoomsImages.push({ roomIndex: i, roomImages });
-      });
+      })
 
-      // Insert room images
-      const roomImageEntries = roomData.flatMap((room: any, index: any) => {
-        const roomImages = RoomsImages.find((ri) => ri.roomIndex === index)?.roomImages || [];
-        return roomImages.map((imagePath) => ({
-          room_id: room.id,
+      // Step 3: Merge existing & new images for each room (Avoid Duplicates)
+      const roomImageEntries = roomData.flatMap((room: any, index: number) => {
+
+        // Get old images based on the index
+        const oldImages = existingImagesMap[index] || [];
+
+        // Get new images uploaded for this room
+        const newImages = RoomsImages.find((ri) => ri.roomIndex === index)?.roomImages || [];
+
+        // Only add new images that are not already in the DB
+        const uniqueNewImages = newImages.filter((img) => !oldImages.includes(img));
+
+        return [...oldImages, ...uniqueNewImages].map((imagePath) => ({
+          room_id: room.id, // Assign the new room ID here
           room_images: imagePath,
         }));
       });
 
-      await RoomImagesModel.destroy({ where: { room_id: roomData.map((room: any) => room.id) }, transaction });
+      // Step 4: Remove Old Images and Insert Updated Ones
+      await RoomImagesModel.destroy({
+        where: { room_id: existingHotel.hotel_rooms.map((room: any) => room.id) },
+        transaction,
+      });
+
       if (roomImageEntries.length > 0) {
         await RoomImagesModel.bulkCreate(roomImageEntries, { transaction });
       }
+
 
       // Update Room Facilities
       const roomFacilitiesEntries = roomData.flatMap((room: any, index) => {
@@ -365,6 +578,64 @@ export const updateHotelData = async (req: Request, res: Response) => {
   }
 };
 
+export const DeleteHotelImage = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const deleteResult = await HotelImagesModel.destroy({
+      where: { id: id },
+    });
+
+    if (deleteResult === 0) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    res.status(200).json({ message: "Image deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting hotel image:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const UpdateHotelStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { hotel_status } = req.body;
+    const updateResult = await AddHotelDataModel.update(
+      { hotel_status },
+      { where: { id } }
+    );
+
+    if (updateResult[0] === 0) {
+      return res.status(404).json({ message: "Hotel not found" });
+    }
+
+    res.status(200).json({ message: "Hotel status updated successfully", hotel_status });
+  } catch (error) {
+    console.error("Error updating hotel status:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const DeleteRoomImage = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const deleteResult = await RoomImagesModel.destroy({
+      where: { id: id },
+    });
+
+    if (deleteResult === 0) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    res.status(200).json({ message: "Image deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting hotel image:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
 

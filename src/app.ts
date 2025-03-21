@@ -37,7 +37,9 @@ app.use(
 // tables generating
 // make it comment when once table is created
 
-// dbInit;
+// (async () => {
+//   await dbInit();
+// })();
 
 
 

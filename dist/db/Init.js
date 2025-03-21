@@ -23,12 +23,12 @@ const RoomImagesModel_1 = __importDefault(require("../model/RoomImagesModel"));
 const isDev = process.env.NODE_ENV === "development";
 const dbInit = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield AddHotelDataModel_1.default.sync({ force: false });
-        yield AddRoomDataModel_1.default.sync({ force: false });
-        yield HotelImagesModel_1.default.sync({ force: false });
-        yield RoomImagesModel_1.default.sync({ force: false });
-        yield HotelFacilitiesModel_1.default.sync({ force: false });
-        yield RoomFacilitiesModel_1.default.sync({ force: false });
+        yield AddHotelDataModel_1.default.sync({ alter: true });
+        yield AddRoomDataModel_1.default.sync({ alter: true });
+        yield HotelImagesModel_1.default.sync({ alter: true });
+        yield RoomImagesModel_1.default.sync({ alter: true });
+        yield HotelFacilitiesModel_1.default.sync({ alter: true });
+        yield RoomFacilitiesModel_1.default.sync({ alter: true });
         console.log('Database synchronization completed successfully.');
     }
     catch (error) {

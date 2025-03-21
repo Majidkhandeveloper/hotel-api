@@ -31,7 +31,9 @@ app.use((0, cors_1.default)({
 }));
 // tables generating
 // make it comment when once table is created
-// dbInit;
+// (async () => {
+//   await dbInit();
+// })();
 app.use("/api/v1/b2b", HotelBookingroutes_1.default);
 app.use((req, res) => {
     console.log(res, "no routes found with : " + req.url, 404);

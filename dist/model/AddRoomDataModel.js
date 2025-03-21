@@ -17,6 +17,7 @@ AddRoomDataModel.init({
     room_occupancy: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     room_quantity: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
     room_rates: { type: sequelize_1.DataTypes.FLOAT, allowNull: false },
+    room_occupancy_number: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
     room_plus_up: { type: sequelize_1.DataTypes.FLOAT, allowNull: false },
     room_rate_start_date: { type: sequelize_1.DataTypes.DATEONLY, allowNull: false },
     room_rate_end_date: { type: sequelize_1.DataTypes.DATEONLY, allowNull: false },
