@@ -12,7 +12,8 @@ export interface AddRoomDataModelProps {
     room_occupancy: string;
     room_occupancy_number: number;
     room_quantity: number;
-    room_rates: number;
+    room_rates_s: number;
+    room_rates_d: number;
     room_plus_up: number;
     room_rate_start_date: Date;
     room_rate_end_date: Date;
@@ -30,7 +31,8 @@ AddRoomDataModel.init(
         room_type: { type: DataTypes.STRING, allowNull: false },
         room_occupancy: { type: DataTypes.STRING, allowNull: false },
         room_quantity: { type: DataTypes.INTEGER, allowNull: false },
-        room_rates: { type: DataTypes.FLOAT, allowNull: false },
+        room_rates_s: { type: DataTypes.FLOAT, allowNull: false },
+        room_rates_d: { type: DataTypes.FLOAT, allowNull: false },
         room_occupancy_number: { type: DataTypes.INTEGER, allowNull: false },
 
         room_plus_up: { type: DataTypes.FLOAT, allowNull: false },
