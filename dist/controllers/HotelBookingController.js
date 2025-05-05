@@ -277,7 +277,6 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 message: "Check-in and Check-out dates are required.",
             });
         }
-        console.log("check_in_date", check_in_date, "check_out_date", check_out_date);
         // Fetch the hotels where check-in and check-out dates are within the specified range
         const data = yield AddHotelDataModel_1.default.findAll({
             include: [

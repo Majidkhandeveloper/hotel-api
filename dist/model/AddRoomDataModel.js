@@ -23,6 +23,9 @@ AddRoomDataModel.init({
     room_rate_start_date: { type: sequelize_1.DataTypes.DATEONLY, allowNull: false },
     room_rate_end_date: { type: sequelize_1.DataTypes.DATEONLY, allowNull: false },
     room_status: { type: sequelize_1.DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    cur_label: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    currency: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    roe: { type: sequelize_1.DataTypes.STRING, allowNull: false },
 }, {
     timestamps: false,
     sequelize: dbConfig_1.default,

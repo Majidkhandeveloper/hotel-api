@@ -18,6 +18,9 @@ export interface AddRoomDataModelProps {
     room_rate_start_date: Date;
     room_rate_end_date: Date;
     room_status: boolean;
+    cur_label: string;
+    currency: string;
+    roe: string;
 }
 
 class AddRoomDataModel extends Model<AddRoomDataModelProps> {
@@ -39,6 +42,9 @@ AddRoomDataModel.init(
         room_rate_start_date: { type: DataTypes.DATEONLY, allowNull: false },
         room_rate_end_date: { type: DataTypes.DATEONLY, allowNull: false },
         room_status: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+        cur_label: { type: DataTypes.STRING, allowNull: false },
+        currency: { type: DataTypes.STRING, allowNull: false },
+        roe: { type: DataTypes.STRING, allowNull: false },
     },
     {
         timestamps: false,

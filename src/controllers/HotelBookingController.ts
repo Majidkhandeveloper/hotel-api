@@ -306,7 +306,6 @@ export const getUmrahHotelData = async (req: Request, res: Response) => {
         message: "Check-in and Check-out dates are required.",
       });
     }
-    console.log("check_in_date",check_in_date,"check_out_date",check_out_date);
 
     // Fetch the hotels where check-in and check-out dates are within the specified range
     const data = await AddHotelDataModel.findAll({
