@@ -17,6 +17,7 @@ const AddHotelDataModel_1 = __importDefault(require("../model/AddHotelDataModel"
 const AddRoomDataModel_1 = __importDefault(require("../model/AddRoomDataModel"));
 const HotelFacilitiesModel_1 = __importDefault(require("../model/HotelFacilitiesModel"));
 const HotelImagesModel_1 = __importDefault(require("../model/HotelImagesModel"));
+const RoomAvailability_1 = __importDefault(require("../model/RoomAvailability"));
 const RoomFacilitiesModel_1 = __importDefault(require("../model/RoomFacilitiesModel"));
 const RoomImagesModel_1 = __importDefault(require("../model/RoomImagesModel"));
 // import SupplierCategoryModel from "../model/SupplierCategoryModel";
@@ -29,6 +30,7 @@ const dbInit = () => __awaiter(void 0, void 0, void 0, function* () {
         yield RoomImagesModel_1.default.sync({ alter: true });
         yield HotelFacilitiesModel_1.default.sync({ alter: true });
         yield RoomFacilitiesModel_1.default.sync({ alter: true });
+        yield RoomAvailability_1.default.sync({ alter: true });
         console.log('Database synchronization completed successfully.');
     }
     catch (error) {

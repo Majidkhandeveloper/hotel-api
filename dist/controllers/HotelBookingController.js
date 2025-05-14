@@ -32,6 +32,8 @@ const HotelImagesModel_1 = __importDefault(require("../model/HotelImagesModel"))
 const RoomImagesModel_1 = __importDefault(require("../model/RoomImagesModel"));
 const HotelFacilitiesModel_1 = __importDefault(require("../model/HotelFacilitiesModel"));
 const RoomFacilitiesModel_1 = __importDefault(require("../model/RoomFacilitiesModel"));
+const RoomAvailability_1 = __importDefault(require("../model/RoomAvailability"));
+const moment_1 = __importDefault(require("moment"));
 // HOTEL API 
 const insertHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -80,6 +82,7 @@ const insertHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function
         const roomBody = hotelRooms.map((rm) => (Object.assign(Object.assign({}, rm), { hotel_id: hotelId, room_rate_start_date: new Date(rm.room_rate_start_date).toISOString().split("T")[0], room_rate_end_date: new Date(rm.room_rate_end_date).toISOString().split("T")[0] })));
         // Insert room data
         const roomData = yield AddRoomDataModel_1.default.bulkCreate(roomBody, { transaction });
+        console.log("hotelData", hotelData, "roomData", roomData);
         // Insert room images
         const roomImageEntries = roomData.flatMap((room, index) => {
             var _a;
@@ -121,8 +124,83 @@ const insertHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.insertHotelData = insertHotelData;
+const generateAvailabilityForRooms = (roomDataArray) => __awaiter(void 0, void 0, void 0, function* () {
+    const allRecords = [];
+    for (const data of roomDataArray) {
+        const startDate = (0, moment_1.default)(data.room_rate_start_date, 'YYYY-MM-DD');
+        const endDate = (0, moment_1.default)(data.room_rate_end_date, 'YYYY-MM-DD');
+        const quantity = parseInt(data.room_quantity); // Total number of physical rooms
+        const roomTypeShort = data.room_type.slice(0, 3).toUpperCase(); // e.g., Standard → STA
+        const occShort = data.room_occupancy.slice(0, 3).toUpperCase(); // e.g., Single → SIN or Double → DOU
+        const hotelName = "Yantra"; // Can be dynamic if needed
+        for (let roomIndex = 1; roomIndex <= quantity; roomIndex++) {
+            const roomNumber = String(roomIndex).padStart(2, '0'); // e.g., 01, 02
+            const current = startDate.clone();
+            while (current.isSameOrBefore(endDate)) {
+                const formattedDay = current.format('DD');
+                const formattedMonth = current.format('MM');
+                const formattedYear = current.format('YY');
+                const hname_typ_occ_rmid = `${hotelName}-${roomTypeShort}—${occShort}-${roomNumber}-${formattedDay}-${formattedMonth}-${formattedYear}`;
+                allRecords.push({
+                    room_id: data.id.toString(),
+                    totalRooms: "1",
+                    bookedRooms: "0",
+                    is_aviabille: "true",
+                    book_start_date: current.format('YYYY-MM-DD'),
+                    book_end_date: current.format('YYYY-MM-DD'),
+                    agent_acc_id: 0,
+                    pax_name: '',
+                    hname_typ_occ_rmid,
+                });
+                current.add(1, 'day');
+            }
+        }
+    }
+    // Log output
+    console.log("Example generated room IDs:");
+    allRecords.slice(0, 10).forEach(r => console.log(r.hname_typ_occ_rmid));
+    console.log(`Total records to insert: ${allRecords.length}`);
+    // Bulk insert
+    yield RoomAvailability_1.default.bulkCreate(allRecords);
+    console.log(`✅ Inserted ${allRecords.length} room availability records`);
+});
 const getHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const roomDataArray = [
+            {
+                id: 38,
+                room_nature: 'Room',
+                room_type: 'Standard',
+                room_occupancy: 'Single',
+                room_occupancy_number: '1',
+                room_quantity: '5',
+                room_rates_s: '20',
+                room_rates_d: '1540',
+                room_plus_up: '30',
+                room_rate_start_date: '2025-05-13',
+                room_rate_end_date: '2025-05-15',
+                hotel_id: 8,
+                cur_label: 'SAR',
+                currency: '4',
+            },
+            {
+                id: 39,
+                room_nature: 'Room',
+                room_type: 'Deluxe',
+                room_occupancy: 'Double',
+                room_occupancy_number: '2',
+                room_quantity: '3',
+                room_rates_s: '40',
+                room_rates_d: '3000',
+                room_plus_up: '50',
+                room_rate_start_date: '2025-06-01',
+                room_rate_end_date: '2025-06-03',
+                hotel_id: 8,
+                cur_label: 'SAR',
+                currency: '4',
+            }
+        ];
+        generateAvailabilityForRooms(roomDataArray);
         const data = yield AddHotelDataModel_1.default.findAll({
             include: [
                 {

@@ -6,6 +6,7 @@ import AddHotelDataModel from "../model/AddHotelDataModel";
 import AddRoomDataModel from "../model/AddRoomDataModel";
 import HotelFacilitiesModel from "../model/HotelFacilitiesModel";
 import HotelImagesModel from "../model/HotelImagesModel";
+import RoomAvailability from "../model/RoomAvailability";
 import RoomFacilitiesModel from "../model/RoomFacilitiesModel";
 import RoomImagesModel from "../model/RoomImagesModel";
 
@@ -22,6 +23,7 @@ const dbInit = async () => {
     await RoomImagesModel.sync({ alter: true });
     await HotelFacilitiesModel.sync({ alter: true });
     await RoomFacilitiesModel.sync({ alter: true });
+    await RoomAvailability.sync({ alter: true });
 
 
 
