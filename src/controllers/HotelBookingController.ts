@@ -88,8 +88,13 @@ export const insertHotelData = async (req: Request, res: Response) => {
 
     // Insert room data
     const roomData = await AddRoomDataModel.bulkCreate(roomBody, { transaction });
-console.log("hotelData",hotelData,"roomData",roomData);
+    const roomDataArray = {
+      roomData: roomData,
+      hotelId: hotelData.dataValues.id,
+      hotelName: hotelData.dataValues.hotel_name,
+    }
 
+    generateAvailabilityForRooms(roomDataArray)
 
     // Insert room images
     const roomImageEntries = roomData.flatMap((room: any, index: any) => {
@@ -139,21 +144,38 @@ console.log("hotelData",hotelData,"roomData",roomData);
   }
 };
 
-const generateAvailabilityForRooms = async (roomDataArray: any[]) => {
+const generateAvailabilityForRooms = async (roomDataArray: { roomData: any; hotelId: any; hotelName?: any; }) => {
   const allRecords = [];
 
-  for (const data of roomDataArray) {
+  for (const data of roomDataArray.roomData) {
+    const typeObj = {
+      Standard: "STD",
+      Deluxe: "DLX",
+      Suite: "SUI",
+      Executive: "EXE",
+      Superior: "Sup"
+    } as any
+    const occupancyObj = {
+      Single: "SIN",
+      Double: "DBL",
+      Triple: "TRI",
+      Quad: "QUA",
+      Twin: "TWN"
+    }
+
     const startDate = moment(data.room_rate_start_date, 'YYYY-MM-DD');
     const endDate = moment(data.room_rate_end_date, 'YYYY-MM-DD');
-    const quantity = parseInt(data.room_quantity); // Total number of physical rooms
-    const roomTypeShort = data.room_type.slice(0, 3).toUpperCase(); // e.g., Standard → STA
-    const occShort = data.room_occupancy.slice(0, 3).toUpperCase(); // e.g., Single → SIN or Double → DOU
-    const hotelName = "Yantra"; // Can be dynamic if needed
+    const quantity = parseInt(data.room_quantity);
+    const roomTypeShort = typeObj[data.room_type];
+    const occShort = occupancyObj[data.room_occupancy as keyof typeof occupancyObj];
+    const hotelName = roomDataArray.hotelName;
+    const hotelId = roomDataArray.hotelId;
 
     for (let roomIndex = 1; roomIndex <= quantity; roomIndex++) {
       const roomNumber = String(roomIndex).padStart(2, '0'); // e.g., 01, 02
 
       const current = startDate.clone();
+
       while (current.isSameOrBefore(endDate)) {
         const formattedDay = current.format('DD');
         const formattedMonth = current.format('MM');
@@ -163,14 +185,15 @@ const generateAvailabilityForRooms = async (roomDataArray: any[]) => {
 
         allRecords.push({
           room_id: data.id.toString(),
-          totalRooms: "1",
-          bookedRooms: "0",
-          is_aviabille: "true",
-          book_start_date: current.format('YYYY-MM-DD'),
-          book_end_date: current.format('YYYY-MM-DD'),
-          agent_acc_id: 0,
-          pax_name: '',
+          hotel_id: hotelId,
           hname_typ_occ_rmid,
+          totalRooms: "",
+          bookedRooms: "",
+          is_aviabille: "",
+          book_start_date: "",
+          book_end_date: "",
+          agent_acc_id: 0,
+          pax_name: "",
         });
 
         current.add(1, 'day');
@@ -178,12 +201,6 @@ const generateAvailabilityForRooms = async (roomDataArray: any[]) => {
     }
   }
 
-  // Log output
-  console.log("Example generated room IDs:");
-  allRecords.slice(0, 10).forEach(r => console.log(r.hname_typ_occ_rmid));
-  console.log(`Total records to insert: ${allRecords.length}`);
-
-  // Bulk insert
   await RoomAvailability.bulkCreate(allRecords);
   console.log(`✅ Inserted ${allRecords.length} room availability records`);
 };
@@ -193,41 +210,7 @@ const generateAvailabilityForRooms = async (roomDataArray: any[]) => {
 
 export const getHotelData = async (req: Request, res: Response) => {
   try {
-    const roomDataArray = [
-      {
-        id: 38,
-        room_nature: 'Room',
-        room_type: 'Standard',
-        room_occupancy: 'Single',
-        room_occupancy_number: '1',
-        room_quantity: '5',
-        room_rates_s: '20',
-        room_rates_d: '1540',
-        room_plus_up: '30',
-        room_rate_start_date: '2025-05-13',
-        room_rate_end_date: '2025-05-15',
-        hotel_id: 8,
-        cur_label: 'SAR',
-        currency: '4',
-      },
-      {
-        id: 39,
-        room_nature: 'Room',
-        room_type: 'Deluxe',
-        room_occupancy: 'Double',
-        room_occupancy_number: '2',
-        room_quantity: '3',
-        room_rates_s: '40',
-        room_rates_d: '3000',
-        room_plus_up: '50',
-        room_rate_start_date: '2025-06-01',
-        room_rate_end_date: '2025-06-03',
-        hotel_id: 8,
-        cur_label: 'SAR',
-        currency: '4',
-      }
-    ];
-    generateAvailabilityForRooms(roomDataArray);
+
     const data = await AddHotelDataModel.findAll({
       include: [
         {
@@ -523,7 +506,6 @@ export const updateHotelData = async (req: Request, res: Response) => {
       where: { hotel_id: hotelId },
       attributes: ["hotel_images"],
     }) as any;
-    // console.log("hotelImages",hotelImages);
 
     const existingImagePaths = existingImages.map((img: { hotel_images: string }) => img.hotel_images);
 
@@ -574,7 +556,13 @@ export const updateHotelData = async (req: Request, res: Response) => {
         })),
         { transaction, returning: true }
       );
+      const roomDataArray = {
+        roomData: roomData,
+        hotelId: existingHotel.dataValues.id,
+        hotelName: existingHotel.dataValues.hotel_name,
+      }
 
+      generateAvailabilityForRooms(roomDataArray);
       /////////////////////////////////////////////////////////////////////////////////////room images//////////////////////////////////
       const existingRoomImages = await RoomImagesModel.findAll({
         where: { room_id: existingHotel.hotel_rooms.map((room: any) => room.id) },

@@ -10,6 +10,10 @@ class RoomAvailability extends sequelize_1.Model {
 }
 RoomAvailability.init({
     id: { type: sequelize_1.DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+    hotel_id: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
     room_id: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,

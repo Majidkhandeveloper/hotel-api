@@ -6,6 +6,7 @@ import Connection from "../db/dbConfig";
 export interface RoomAvailabilityProps {
     id?: number;
     room_id: string;
+    hotel_id: string;
     totalRooms: string;
     bookedRooms: string;
     is_aviabille: string;
@@ -21,6 +22,10 @@ class RoomAvailability extends Model<RoomAvailabilityProps> { }
 RoomAvailability.init(
     {
         id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+        hotel_id: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         room_id: {
             type: DataTypes.STRING,
             allowNull: false,
