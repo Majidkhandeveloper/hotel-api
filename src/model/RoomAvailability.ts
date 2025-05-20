@@ -10,8 +10,11 @@ export interface RoomAvailabilityProps {
     totalRooms: string;
     bookedRooms: string;
     is_aviabille: string;
-    book_start_date: string; // use STRING
-    book_end_date: string;   // use STRING
+    book_start_end_date: string; 
+    roe: string;
+    curr: string;
+    rates: string;
+    plus_up: string;
     agent_acc_id: number;
     pax_name: string;
     hname_typ_occ_rmid: string;
@@ -46,11 +49,23 @@ RoomAvailability.init(
             type: DataTypes.STRING,
             allowNull: false,
         },
-        book_start_date: {
+        book_start_end_date: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        book_end_date: {
+        roe: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        curr: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        rates: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        plus_up: {
             type: DataTypes.STRING,
             allowNull: false,
         },

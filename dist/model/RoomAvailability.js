@@ -34,11 +34,23 @@ RoomAvailability.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
-    book_start_date: {
+    book_start_end_date: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
-    book_end_date: {
+    roe: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
+    curr: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
+    rates: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
+    plus_up: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
