@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DeleteRoomImage = exports.UpdateHotelStatus = exports.DeleteHotelImage = exports.updateHotelData = exports.getUmrahHotelData = exports.getSingleHotelData = exports.getHotelData = exports.insertHotelData = void 0;
+exports.updateRoomAvailabilityData = exports.DeleteRoomImage = exports.UpdateHotelStatus = exports.DeleteHotelImage = exports.updateHotelData = exports.getUmrahHotelData = exports.getSingleHotelData = exports.getHotelData = exports.insertHotelData = void 0;
 const sequelize_1 = require("sequelize");
 const AddHotelDataModel_1 = __importDefault(require("../model/AddHotelDataModel"));
 const AddRoomDataModel_1 = __importDefault(require("../model/AddRoomDataModel"));
@@ -167,11 +167,14 @@ const generateAvailabilityForRooms = (roomDataArray) => __awaiter(void 0, void 0
                     hname_typ_occ_rmid,
                     totalRooms: "",
                     bookedRooms: "",
-                    is_aviabille: "",
-                    book_start_date: "",
-                    book_end_date: "",
+                    is_aviabille: "false",
+                    book_start_end_date: "",
                     agent_acc_id: 0,
                     pax_name: "",
+                    roe: "",
+                    curr: "",
+                    rates: "",
+                    plus_up: "",
                 });
                 current.add(1, 'day');
             }
@@ -613,6 +616,115 @@ const DeleteRoomImage = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.DeleteRoomImage = DeleteRoomImage;
+// update room availability data
+const updateRoomAvailabilityData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { hotels } = req.body;
+        const transformed = hotels.flatMap((hotel) => {
+            var _a;
+            return (_a = hotel.secondColumn) === null || _a === void 0 ? void 0 : _a.map(room => (Object.assign(Object.assign({}, room), { agent_acc_id: hotel.agent_acc_id, start_date: new Date(hotel.fromDate), end_date: new Date(hotel.toDate) })));
+        });
+        // console.log("transformed", transformed);
+        function getDateRange(start, end) {
+            const dates = [];
+            let current = (0, moment_1.default)(start);
+            const last = (0, moment_1.default)(end);
+            while (current.isSameOrBefore(last, 'day')) {
+                dates.push(current.format('YYYY-MM-DD'));
+                current.add(1, 'day');
+            }
+            return dates;
+        }
+        for (const room of transformed) {
+            const dates = getDateRange(room.start_date, room.end_date);
+            const typeObj = {
+                Standard: "STD",
+                Deluxe: "DLX",
+                Suite: "SUI",
+                Executive: "EXE",
+                Superior: "Sup"
+            };
+            const occupancyObj = {
+                Single: "SIN",
+                Double: "DBL",
+                Triple: "TRI",
+                Quad: "QUA",
+                Twin: "TWN"
+            };
+            for (const date of dates) {
+                const formattedDate = (0, moment_1.default)(date).format("DD-MM-YY");
+                // Step 1: Fetch matching rows (without filtering by book_start_end_date)
+                const matchingRecords = yield RoomAvailability_1.default.findAll({
+                    where: {
+                        room_id: room.roomId,
+                        hname_typ_occ_rmid: {
+                            [sequelize_1.Op.like]: `%${typeObj[room.roomType]}—${occupancyObj[room.roomOccupancy]}%${formattedDate}`
+                        }
+                    },
+                    order: [['id', 'ASC']]
+                });
+                const recordsToUpdate = matchingRecords
+                    .filter((record) => {
+                    return record.is_aviabille === 'false';
+                })
+                    .slice(0, room.selectedRoom);
+                // Step 3: Update
+                for (const record of recordsToUpdate) {
+                    yield record.update({
+                        agent_acc_id: 0,
+                        is_aviabille: "true",
+                        book_start_end_date: formattedDate,
+                    });
+                }
+            }
+        }
+        // for (const room of transformed) {
+        //   const dates = getDateRange(room.start_date, room.end_date);
+        //   const typeObj = {
+        //     Standard: "STD",
+        //     Deluxe: "DLX",
+        //     Suite: "SUI",
+        //     Executive: "EXE",
+        //     Superior: "Sup"
+        //   } as any;
+        //   const occupancyObj = {
+        //     Single: "SIN",
+        //     Double: "DBL",
+        //     Triple: "TRI",
+        //     Quad: "QUA",
+        //     Twin: "TWN"
+        //   } as any;
+        //   for (const date of dates) {
+        //     const formattedDate = moment(date).format("DD-MM-YY");
+        //     // Step 1: Fetch matching rows
+        //     const matchingRecords = await RoomAvailability.findAll({
+        //       where: {
+        //         room_id: room.roomId,
+        //         hname_typ_occ_rmid: {
+        //           [Op.like]: `%${typeObj[room.roomType]}—${occupancyObj[room.roomOccupancy]}%${formattedDate}`
+        //         }
+        //       },
+        //       order: [['id', 'ASC']], // Ensure consistent order
+        //       limit: room.selectedRoom // Step 2: Limit to selectedRoom
+        //     });
+        //     // Step 3: Update only the limited records
+        //     for (const record of matchingRecords) {
+        //       await record.update({
+        //         agent_acc_id: 0,
+        //         book_start_end_date: formattedDate,
+        //         // other fields like roe, curr, rates, etc.
+        //       });
+        //     }
+        //   }
+        // }
+        res.status(200).json({ message: "Room availability updated successfully" });
+    }
+    catch (error) {
+        console.error("Error updating room availability:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+exports.updateRoomAvailabilityData = updateRoomAvailabilityData;
 // hotel data
 // export const getHotelData = async (req: Request, res: Response) => {
 //   try {

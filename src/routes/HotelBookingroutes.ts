@@ -1,6 +1,6 @@
 // import { userPermissions } from './../middleware/Permissions';
 import { Router } from "express";
-import {   DeleteHotelImage, DeleteRoomImage, UpdateHotelStatus, getHotelData, getSingleHotelData, getUmrahHotelData, insertHotelData, updateHotelData } from "../controllers/HotelBookingController";
+import {   DeleteHotelImage, DeleteRoomImage, UpdateHotelStatus, getHotelData, getSingleHotelData, getUmrahHotelData, insertHotelData, updateHotelData, updateRoomAvailabilityData } from "../controllers/HotelBookingController";
 import { UploadFiles } from "../utils/Uploads";
 // import protect from "../middleware/AuthMiddleware";
 const router = Router();
@@ -13,6 +13,7 @@ router.patch('/update_hotel_data/:id',UploadFiles,updateHotelData)
 router.delete('/delete_hotel_image/:id',UploadFiles,DeleteHotelImage)
 router.delete('/delete_room_image/:id',DeleteRoomImage)
 router.patch('/update_hotel_status/:id',UpdateHotelStatus)
+router.patch('/update_room_availibity_data',updateRoomAvailabilityData)
 
 // get hotel data for umarah
 router.get('/get-umrah-hotel',getUmrahHotelData)

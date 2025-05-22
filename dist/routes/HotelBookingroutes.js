@@ -14,6 +14,7 @@ router.patch('/update_hotel_data/:id', Uploads_1.UploadFiles, HotelBookingContro
 router.delete('/delete_hotel_image/:id', Uploads_1.UploadFiles, HotelBookingController_1.DeleteHotelImage);
 router.delete('/delete_room_image/:id', HotelBookingController_1.DeleteRoomImage);
 router.patch('/update_hotel_status/:id', HotelBookingController_1.UpdateHotelStatus);
+router.patch('/update_room_availibity_data', HotelBookingController_1.updateRoomAvailabilityData);
 // get hotel data for umarah
 router.get('/get-umrah-hotel', HotelBookingController_1.getUmrahHotelData);
 // router.get('/hotel-data', getHotelData)
