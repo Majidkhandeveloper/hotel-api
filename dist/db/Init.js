@@ -30,7 +30,7 @@ const dbInit = () => __awaiter(void 0, void 0, void 0, function* () {
         yield RoomImagesModel_1.default.sync({ alter: true });
         yield HotelFacilitiesModel_1.default.sync({ alter: true });
         yield RoomFacilitiesModel_1.default.sync({ alter: true });
-        yield RoomAvailability_1.default.sync({ alter: true });
+        yield RoomAvailability_1.default.sync({ alter: false });
         console.log('Database synchronization completed successfully.');
     }
     catch (error) {

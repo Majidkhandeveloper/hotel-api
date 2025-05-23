@@ -2,6 +2,7 @@
 
 import { DataTypes, Model } from "sequelize";
 import Connection from "../db/dbConfig";
+import AddRoomDataModel from "./AddRoomDataModel";
 
 export interface RoomAvailabilityProps {
     id?: number;
@@ -10,7 +11,7 @@ export interface RoomAvailabilityProps {
     totalRooms: string;
     bookedRooms: string;
     is_aviabille: string;
-    book_start_end_date: string; 
+    book_start_end_date: string;
     roe: string;
     curr: string;
     rates: string;
@@ -26,13 +27,10 @@ RoomAvailability.init(
     {
         id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
         hotel_id: {
-            type: DataTypes.STRING,
-            allowNull: false,
+            type: DataTypes.BIGINT
         },
-        room_id: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
+        room_id: { type: DataTypes.BIGINT },
+
         totalRooms: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -84,5 +82,9 @@ RoomAvailability.init(
         timestamps: false,
     }
 );
+
+
+AddRoomDataModel.hasMany(RoomAvailability, { foreignKey: "room_id" });
+RoomAvailability.belongsTo(AddRoomDataModel, { foreignKey: "room_id" });
 
 export default RoomAvailability;

@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -24,7 +47,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateRoomAvailabilityData = exports.DeleteRoomImage = exports.UpdateHotelStatus = exports.DeleteHotelImage = exports.updateHotelData = exports.getUmrahHotelData = exports.getSingleHotelData = exports.getHotelData = exports.insertHotelData = void 0;
-const sequelize_1 = require("sequelize");
+const sequelize_1 = __importStar(require("sequelize"));
 const AddHotelDataModel_1 = __importDefault(require("../model/AddHotelDataModel"));
 const AddRoomDataModel_1 = __importDefault(require("../model/AddRoomDataModel"));
 const dbConfig_1 = __importDefault(require("../db/dbConfig"));
@@ -167,7 +190,7 @@ const generateAvailabilityForRooms = (roomDataArray) => __awaiter(void 0, void 0
                     hname_typ_occ_rmid,
                     totalRooms: "",
                     bookedRooms: "",
-                    is_aviabille: "false",
+                    is_aviabille: "true",
                     book_start_end_date: "",
                     agent_acc_id: 0,
                     pax_name: "",
@@ -339,6 +362,24 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 message: "Check-in and Check-out dates are required.",
             });
         }
+        function getDateRange(startDate, endDate) {
+            const dates = [];
+            let current = (0, moment_1.default)(startDate);
+            const end = (0, moment_1.default)(endDate);
+            while (current.isBefore(end)) { // Excludes checkout date
+                dates.push(current.format("YYYY-MM-DD"));
+                current = current.add(1, "day");
+            }
+            return dates;
+        }
+        const dates = getDateRange(check_in_date, check_out_date); // Excludes checkout
+        function extractDateFromHname(hname) {
+            const parts = hname.split("-");
+            const dd = parts[parts.length - 3];
+            const mm = parts[parts.length - 2];
+            const yy = parts[parts.length - 1];
+            return `20${yy}-${mm}-${dd}`; // "2025-06-01"
+        }
         // Fetch the hotels where check-in and check-out dates are within the specified range
         const data = yield AddHotelDataModel_1.default.findAll({
             include: [
@@ -364,20 +405,52 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
                             model: RoomImagesModel_1.default,
                             as: "room_images",
                         },
+                        {
+                            model: RoomAvailability_1.default
+                        }
                     ],
                     where: {
-                        room_rate_start_date: {
-                            [sequelize_1.Op.lte]: check_out_date, // Room check-in date should be before or on check-out date
-                        },
-                        room_rate_end_date: {
-                            [sequelize_1.Op.gte]: check_in_date, // Room check-out date should be after or on check-in date
-                        },
+                        // room_rate_start_date: {
+                        //   [Op.lte]: check_out_date, // Room check-in date should be before or on check-out date
+                        // },
+                        // room_rate_end_date: {
+                        //   [Op.gte]: check_in_date, // Room check-out date should be after or on check-in date
+                        // },
+                        where: sequelize_1.default.literal(`
+              STR_TO_DATE(room_rate_start_date, '%Y-%m-%d') <= '${dates[0]}' AND
+              STR_TO_DATE(room_rate_end_date, '%Y-%m-%d') >= '${dates[dates.length - 1]}'
+            `),
                     },
                 },
             ],
             where: { hotel_umrah_status: 1 },
         });
-        if (!data.length) {
+        console.log("dates", dates);
+        // const result = filterHotelsByAvailability(data, dates);
+        data
+            .map((hotel) => {
+            const filteredRooms = hotel.hotel_rooms.filter((room) => {
+                const availabilities = room.RoomAvailabilities || [];
+                // ✅ Build a map of dates to available series
+                const availabilityMap = {};
+                availabilities.forEach((avail) => {
+                    if (avail.is_aviabille === "true" && (!avail.book_start_end_date || avail.book_start_end_date.trim() === "")) {
+                        const dateStr = extractDateFromHname(avail.hname_typ_occ_rmid);
+                        console.log("dateStr", dateStr);
+                        console.log("date", dates);
+                        availabilityMap[dateStr] = (availabilityMap[dateStr] || 0) + 1;
+                    }
+                });
+                // ✅ Room must have at least 1 available unit for **every date**
+                const isFullyAvailable = dates.every(date => availabilityMap[date] && availabilityMap[date] > 0);
+                return isFullyAvailable;
+            });
+            return Object.assign(Object.assign({}, hotel), { hotel_rooms: filteredRooms });
+        })
+            .filter((hotel) => hotel.hotel_rooms.length > 0);
+        const filteredHotels = data;
+        console.log("filteredHotels", filteredHotels);
+        if (!filteredHotels.length) {
             return res.status(404).json({
                 success: false,
                 message: "No hotels found for the given date range",
@@ -386,7 +459,7 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
         return res.status(200).json({
             success: true,
             message: "Hotels retrieved successfully",
-            data,
+            filteredHotels,
         });
     }
     catch (error) {
@@ -399,6 +472,29 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getUmrahHotelData = getUmrahHotelData;
+function filterHotelsByAvailability(hotels, requiredDates) {
+    return hotels
+        .map((hotel) => {
+        const filteredRooms = hotel.hotel_rooms.filter((room) => {
+            const availabilities = room.RoomAvailabilities || [];
+            // Filter available records
+            const availableDates = availabilities
+                .filter((avail) => avail.is_aviabille === "true" &&
+                (!avail.book_start_end_date || avail.book_start_end_date.trim() === ""))
+                .map((avail) => {
+                const parts = avail.hname_typ_occ_rmid.split("-");
+                const dd = parts[parts.length - 3];
+                const mm = parts[parts.length - 2];
+                const yy = parts[parts.length - 1];
+                return `20${yy}-${mm}-${dd}`; // format: YYYY-MM-DD
+            });
+            // Keep room only if all requiredDates are in the list
+            return requiredDates.every(date => availableDates.includes(date));
+        });
+        return Object.assign(Object.assign({}, hotel), { hotel_rooms: filteredRooms });
+    })
+        .filter(hotel => hotel.hotel_rooms.length > 0);
+}
 const updateHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _c;
     const transaction = yield dbConfig_1.default.transaction();
@@ -624,12 +720,12 @@ const updateRoomAvailabilityData = (req, res) => __awaiter(void 0, void 0, void 
             var _a;
             return (_a = hotel.secondColumn) === null || _a === void 0 ? void 0 : _a.map(room => (Object.assign(Object.assign({}, room), { agent_acc_id: hotel.agent_acc_id, start_date: new Date(hotel.fromDate), end_date: new Date(hotel.toDate) })));
         });
-        // console.log("transformed", transformed);
         function getDateRange(start, end) {
             const dates = [];
             let current = (0, moment_1.default)(start);
             const last = (0, moment_1.default)(end);
-            while (current.isSameOrBefore(last, 'day')) {
+            // isSameOrBefore   prevous use include checout date isBefore methos exlude checkout date
+            while (current.isBefore(last, 'day')) {
                 dates.push(current.format('YYYY-MM-DD'));
                 current.add(1, 'day');
             }
@@ -665,58 +761,19 @@ const updateRoomAvailabilityData = (req, res) => __awaiter(void 0, void 0, void 
                 });
                 const recordsToUpdate = matchingRecords
                     .filter((record) => {
-                    return record.is_aviabille === 'false';
+                    return record.is_aviabille === 'true';
                 })
                     .slice(0, room.selectedRoom);
                 // Step 3: Update
                 for (const record of recordsToUpdate) {
                     yield record.update({
                         agent_acc_id: 0,
-                        is_aviabille: "true",
+                        is_aviabille: "false",
                         book_start_end_date: formattedDate,
                     });
                 }
             }
         }
-        // for (const room of transformed) {
-        //   const dates = getDateRange(room.start_date, room.end_date);
-        //   const typeObj = {
-        //     Standard: "STD",
-        //     Deluxe: "DLX",
-        //     Suite: "SUI",
-        //     Executive: "EXE",
-        //     Superior: "Sup"
-        //   } as any;
-        //   const occupancyObj = {
-        //     Single: "SIN",
-        //     Double: "DBL",
-        //     Triple: "TRI",
-        //     Quad: "QUA",
-        //     Twin: "TWN"
-        //   } as any;
-        //   for (const date of dates) {
-        //     const formattedDate = moment(date).format("DD-MM-YY");
-        //     // Step 1: Fetch matching rows
-        //     const matchingRecords = await RoomAvailability.findAll({
-        //       where: {
-        //         room_id: room.roomId,
-        //         hname_typ_occ_rmid: {
-        //           [Op.like]: `%${typeObj[room.roomType]}—${occupancyObj[room.roomOccupancy]}%${formattedDate}`
-        //         }
-        //       },
-        //       order: [['id', 'ASC']], // Ensure consistent order
-        //       limit: room.selectedRoom // Step 2: Limit to selectedRoom
-        //     });
-        //     // Step 3: Update only the limited records
-        //     for (const record of matchingRecords) {
-        //       await record.update({
-        //         agent_acc_id: 0,
-        //         book_start_end_date: formattedDate,
-        //         // other fields like roe, curr, rates, etc.
-        //       });
-        //     }
-        //   }
-        // }
         res.status(200).json({ message: "Room availability updated successfully" });
     }
     catch (error) {

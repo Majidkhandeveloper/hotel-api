@@ -23,7 +23,7 @@ const dbInit = async () => {
     await RoomImagesModel.sync({ alter: true });
     await HotelFacilitiesModel.sync({ alter: true });
     await RoomFacilitiesModel.sync({ alter: true });
-    await RoomAvailability.sync({ alter: true });
+    await RoomAvailability.sync({ alter: false });
 
 
 
