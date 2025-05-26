@@ -429,7 +429,10 @@ export const getUmrahHotelData = async (req: Request, res: Response) => {
               as: "room_images",
             },
             {
-              model: RoomAvailability
+              model: RoomAvailability,
+              where:{
+                is_aviabille: "true",
+              }
 
             }
           ],
@@ -451,46 +454,30 @@ export const getUmrahHotelData = async (req: Request, res: Response) => {
       where: { hotel_umrah_status: 1 },
     }) as any;
 
-    console.log("dates", dates);
-
-    // const result = filterHotelsByAvailability(data, dates);
-    data
-      .map((hotel: any) => {
-        const filteredRooms = hotel.hotel_rooms.filter((room: any) => {
-          const availabilities = room.RoomAvailabilities || [];
-
-          // ✅ Build a map of dates to available series
-          const availabilityMap: Record<string, number> = {};
-
-          availabilities.forEach((avail: any) => {
-            if (avail.is_aviabille === "true" && (!avail.book_start_end_date || avail.book_start_end_date.trim() === "")) {
-              const dateStr = extractDateFromHname(avail.hname_typ_occ_rmid);
-              console.log("dateStr",dateStr);
-              console.log("date",dates);
-              
-              availabilityMap[dateStr] = (availabilityMap[dateStr] || 0) + 1;
-            }
-          });
-
-          // ✅ Room must have at least 1 available unit for **every date**
-          const isFullyAvailable = dates.every(date => availabilityMap[date] && availabilityMap[date] > 0);
-
-          return isFullyAvailable;
+    const finalResult = data.map((hotel: { hotel_rooms: any[]; toJSON: () => any; }) => {
+      const filteredRooms = hotel.hotel_rooms.filter(room => {
+        const availableDates = room.RoomAvailabilities.map((av: any) => {
+          const parts = av.hname_typ_occ_rmid.split("-");
+          const dateStr = parts.slice(-3).join("-"); // "24-05-25"
+          const parsed = moment(dateStr, "DD-MM-YY").format("YYYY-MM-DD");
+          return parsed;
         });
-
-        return {
-          ...hotel,
-          hotel_rooms: filteredRooms,
-        };
-      })
-      .filter((hotel: any) => hotel.hotel_rooms.length > 0);
+    
+        // Check if every date in `dates` is present in `availableDates`
+        return dates.every(d => availableDates.includes(d));
+      });
+    
+      return {
+        ...hotel.toJSON(),
+        hotel_rooms: filteredRooms,
+      };
+    }).filter((h: { hotel_rooms: string | any[]; }) => h.hotel_rooms.length > 0);
 
   
 
-    const filteredHotels = data
+    const filteredHotels = finalResult
 
 
-    console.log("filteredHotels", filteredHotels);
 
 
     if (!filteredHotels.length) {

@@ -406,7 +406,10 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
                             as: "room_images",
                         },
                         {
-                            model: RoomAvailability_1.default
+                            model: RoomAvailability_1.default,
+                            where: {
+                                is_aviabille: "true",
+                            }
                         }
                     ],
                     where: {
@@ -425,31 +428,20 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
             ],
             where: { hotel_umrah_status: 1 },
         });
-        console.log("dates", dates);
-        // const result = filterHotelsByAvailability(data, dates);
-        data
-            .map((hotel) => {
-            const filteredRooms = hotel.hotel_rooms.filter((room) => {
-                const availabilities = room.RoomAvailabilities || [];
-                // ✅ Build a map of dates to available series
-                const availabilityMap = {};
-                availabilities.forEach((avail) => {
-                    if (avail.is_aviabille === "true" && (!avail.book_start_end_date || avail.book_start_end_date.trim() === "")) {
-                        const dateStr = extractDateFromHname(avail.hname_typ_occ_rmid);
-                        console.log("dateStr", dateStr);
-                        console.log("date", dates);
-                        availabilityMap[dateStr] = (availabilityMap[dateStr] || 0) + 1;
-                    }
+        const finalResult = data.map((hotel) => {
+            const filteredRooms = hotel.hotel_rooms.filter(room => {
+                const availableDates = room.RoomAvailabilities.map((av) => {
+                    const parts = av.hname_typ_occ_rmid.split("-");
+                    const dateStr = parts.slice(-3).join("-"); // "24-05-25"
+                    const parsed = (0, moment_1.default)(dateStr, "DD-MM-YY").format("YYYY-MM-DD");
+                    return parsed;
                 });
-                // ✅ Room must have at least 1 available unit for **every date**
-                const isFullyAvailable = dates.every(date => availabilityMap[date] && availabilityMap[date] > 0);
-                return isFullyAvailable;
+                // Check if every date in `dates` is present in `availableDates`
+                return dates.every(d => availableDates.includes(d));
             });
-            return Object.assign(Object.assign({}, hotel), { hotel_rooms: filteredRooms });
-        })
-            .filter((hotel) => hotel.hotel_rooms.length > 0);
-        const filteredHotels = data;
-        console.log("filteredHotels", filteredHotels);
+            return Object.assign(Object.assign({}, hotel.toJSON()), { hotel_rooms: filteredRooms });
+        }).filter((h) => h.hotel_rooms.length > 0);
+        const filteredHotels = finalResult;
         if (!filteredHotels.length) {
             return res.status(404).json({
                 success: false,
