@@ -94,7 +94,7 @@ export const insertHotelData = async (req: Request, res: Response) => {
       hotelName: hotelData.dataValues.hotel_name,
     }
 
-    generateAvailabilityForRooms(roomDataArray)
+    generateAvailabilityForRooms(roomDataArray,transaction)
 
     // Insert room images
     const roomImageEntries = roomData.flatMap((room: any, index: any) => {
@@ -144,7 +144,7 @@ export const insertHotelData = async (req: Request, res: Response) => {
   }
 };
 
-const generateAvailabilityForRooms = async (roomDataArray: { roomData: any; hotelId: any; hotelName?: any; }) => {
+const generateAvailabilityForRooms = async (roomDataArray: { roomData: any; hotelId: any; hotelName?: any;},transaction:any) => {
   const allRecords = [] as any;
 
   for (const data of roomDataArray.roomData) {
@@ -204,7 +204,7 @@ const generateAvailabilityForRooms = async (roomDataArray: { roomData: any; hote
     }
   }
 
-  await RoomAvailability.bulkCreate(allRecords);
+  await RoomAvailability.bulkCreate(allRecords,{ transaction });
   console.log(`✅ Inserted ${allRecords.length} room availability records`);
 };
 
@@ -396,13 +396,7 @@ export const getUmrahHotelData = async (req: Request, res: Response) => {
       return dates;
     }
     const dates = getDateRange(check_in_date, check_out_date); // Excludes checkout
-    function extractDateFromHname(hname: string) {
-      const parts = hname.split("-");
-      const dd = parts[parts.length - 3];
-      const mm = parts[parts.length - 2];
-      const yy = parts[parts.length - 1];
-      return `20${yy}-${mm}-${dd}`; // "2025-06-01"
-    }
+    
     // Fetch the hotels where check-in and check-out dates are within the specified range
     const data = await AddHotelDataModel.findAll({
       include: [
@@ -648,13 +642,27 @@ export const updateHotelData = async (req: Request, res: Response) => {
         })),
         { transaction, returning: true }
       );
+      await RoomAvailability.destroy({
+        where: {
+          room_id: existingHotel.hotel_rooms.map((room: any) => room.id),
+        },
+        transaction,
+      });
+
+
+      await RoomAvailability.destroy({
+        where: {
+          room_id: existingHotel.hotel_rooms.map((room: any) => room.id),
+        },
+        transaction,
+      });
       const roomDataArray = {
         roomData: roomData,
         hotelId: existingHotel.dataValues.id,
         hotelName: existingHotel.dataValues.hotel_name,
       }
 
-      generateAvailabilityForRooms(roomDataArray);
+      await generateAvailabilityForRooms(roomDataArray, transaction);
       /////////////////////////////////////////////////////////////////////////////////////room images//////////////////////////////////
       const existingRoomImages = await RoomImagesModel.findAll({
         where: { room_id: existingHotel.hotel_rooms.map((room: any) => room.id) },

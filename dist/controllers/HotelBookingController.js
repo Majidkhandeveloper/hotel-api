@@ -110,7 +110,7 @@ const insertHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function
             hotelId: hotelData.dataValues.id,
             hotelName: hotelData.dataValues.hotel_name,
         };
-        generateAvailabilityForRooms(roomDataArray);
+        generateAvailabilityForRooms(roomDataArray, transaction);
         // Insert room images
         const roomImageEntries = roomData.flatMap((room, index) => {
             var _a;
@@ -152,7 +152,7 @@ const insertHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.insertHotelData = insertHotelData;
-const generateAvailabilityForRooms = (roomDataArray) => __awaiter(void 0, void 0, void 0, function* () {
+const generateAvailabilityForRooms = (roomDataArray, transaction) => __awaiter(void 0, void 0, void 0, function* () {
     const allRecords = [];
     for (const data of roomDataArray.roomData) {
         const typeObj = {
@@ -203,7 +203,7 @@ const generateAvailabilityForRooms = (roomDataArray) => __awaiter(void 0, void 0
             }
         }
     }
-    yield RoomAvailability_1.default.bulkCreate(allRecords);
+    yield RoomAvailability_1.default.bulkCreate(allRecords, { transaction });
     console.log(`✅ Inserted ${allRecords.length} room availability records`);
 });
 const getHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -373,13 +373,6 @@ const getUmrahHotelData = (req, res) => __awaiter(void 0, void 0, void 0, functi
             return dates;
         }
         const dates = getDateRange(check_in_date, check_out_date); // Excludes checkout
-        function extractDateFromHname(hname) {
-            const parts = hname.split("-");
-            const dd = parts[parts.length - 3];
-            const mm = parts[parts.length - 2];
-            const yy = parts[parts.length - 1];
-            return `20${yy}-${mm}-${dd}`; // "2025-06-01"
-        }
         // Fetch the hotels where check-in and check-out dates are within the specified range
         const data = yield AddHotelDataModel_1.default.findAll({
             include: [
@@ -572,12 +565,24 @@ const updateHotelData = (req, res) => __awaiter(void 0, void 0, void 0, function
         if (hotelRooms && Array.isArray(hotelRooms)) {
             yield AddRoomDataModel_1.default.destroy({ where: { hotel_id: hotelId }, transaction });
             const roomData = yield AddRoomDataModel_1.default.bulkCreate(hotelRooms.map((rm) => (Object.assign(Object.assign({}, rm), { hotel_id: hotelId }))), { transaction, returning: true });
+            yield RoomAvailability_1.default.destroy({
+                where: {
+                    room_id: existingHotel.hotel_rooms.map((room) => room.id),
+                },
+                transaction,
+            });
+            yield RoomAvailability_1.default.destroy({
+                where: {
+                    room_id: existingHotel.hotel_rooms.map((room) => room.id),
+                },
+                transaction,
+            });
             const roomDataArray = {
                 roomData: roomData,
                 hotelId: existingHotel.dataValues.id,
                 hotelName: existingHotel.dataValues.hotel_name,
             };
-            generateAvailabilityForRooms(roomDataArray);
+            yield generateAvailabilityForRooms(roomDataArray, transaction);
             /////////////////////////////////////////////////////////////////////////////////////room images//////////////////////////////////
             const existingRoomImages = yield RoomImagesModel_1.default.findAll({
                 where: { room_id: existingHotel.hotel_rooms.map((room) => room.id) },
